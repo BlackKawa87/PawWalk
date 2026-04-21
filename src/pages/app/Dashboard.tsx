@@ -10,6 +10,8 @@ import {
   fmt,
   type Booking,
 } from "@/utils/booking";
+import { getCredits, getFavorites } from "@/utils/retention";
+import { getWalkerById } from "@/data/walkers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +43,9 @@ import {
   Shield,
   Info,
   ArrowRight,
+  Heart,
+  Gift,
+  MessageCircle,
 } from "lucide-react";
 
 // ─── Shared Nav ──────────────────────────────────────────────────────────────
@@ -103,7 +108,11 @@ function OwnerDashboard() {
   const firstName = user?.name?.split(" ")[0] ?? "there";
   const bookings = user ? getBookingsByOwner(user.id) : [];
   const upcoming = bookings.filter((b) => b.status === "confirmed");
+  const pastWalks = bookings.filter((b) => b.status !== "confirmed" && b.status !== "pending");
   const hasBookings = bookings.length > 0;
+  const credits = getCredits();
+  const favWalkerIds = getFavorites();
+  const favWalkers = favWalkerIds.map((id) => getWalkerById(id)).filter(Boolean) as NonNullable<ReturnType<typeof getWalkerById>>[];
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
@@ -124,6 +133,21 @@ function OwnerDashboard() {
           Book a walk
         </Button>
       </div>
+
+      {/* Credits banner */}
+      {credits > 0 && (
+        <div
+          className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3 cursor-pointer"
+          onClick={() => navigate("/app/find")}
+        >
+          <Gift className="h-5 w-5 text-green-700 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-green-900">{fmt(credits)} in PawGo credits</p>
+            <p className="text-xs text-green-700">Applied automatically on your next booking</p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-green-700 shrink-0" />
+        </div>
+      )}
 
       {/* FTUE — no bookings yet */}
       {!hasBookings && (
@@ -244,6 +268,97 @@ function OwnerDashboard() {
         </section>
       )}
 
+      {/* Past walks — rebooking */}
+      {pastWalks.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-foreground">Past walks</h2>
+          </div>
+          <div className="space-y-3">
+            {pastWalks.slice(0, 3).map((booking) => (
+              <Card key={booking.id} className="border-border">
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9 shrink-0">
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                        {booking.walkerName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground truncate">{booking.walkerName}</p>
+                      <p className="text-xs text-muted-foreground">{booking.date} · {booking.duration} min</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs px-3"
+                        onClick={() => navigate(`/app/chat/${booking.id}`)}
+                      >
+                        <MessageCircle className="h-3.5 w-3.5 mr-1" />
+                        Chat
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs px-3"
+                        onClick={() => navigate(`/app/book/${booking.walkerId}`)}
+                      >
+                        Book again
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Favourite walkers */}
+      {favWalkers.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-foreground flex items-center gap-2">
+              <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+              Favourite walkers
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {favWalkers.map((w) => (
+              <Card
+                key={w.id}
+                className="border-border cursor-pointer hover:border-primary/40 transition-colors"
+                onClick={() => navigate(`/app/walker/${w.id}`)}
+              >
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                        {w.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm text-foreground truncate">{w.name}</p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Star className="h-3 w-3 fill-accent text-accent" />
+                        <span>{w.rating}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="w-full h-8 text-xs"
+                    onClick={(e) => { e.stopPropagation(); navigate(`/app/book/${w.id}`); }}
+                  >
+                    Book
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Platform disclaimer */}
       <Alert className="border-border bg-muted/30">
         <Info className="h-4 w-4 text-muted-foreground" />
@@ -270,7 +385,7 @@ function OwnerDashboard() {
             <Card
               key={w.id}
               className="border-border cursor-pointer hover:border-primary/40 transition-colors"
-              onClick={() => navigate(`/app/book/${w.id}`)}
+              onClick={() => navigate(`/app/walker/${w.id}`)}
             >
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center gap-3 mb-3">
@@ -563,6 +678,46 @@ function WalkerDashboard() {
           </div>
         </section>
       )}
+
+      {/* Repeat clients */}
+      {bookings.length > 0 && (() => {
+        const ownerCounts: Record<string, { name: string; dog: string; count: number; latestId: string }> = {};
+        bookings.forEach((b) => {
+          if (!ownerCounts[b.ownerId]) ownerCounts[b.ownerId] = { name: b.ownerName, dog: b.ownerDog, count: 0, latestId: b.id };
+          ownerCounts[b.ownerId].count++;
+        });
+        const repeats = Object.values(ownerCounts).filter((o) => o.count > 1);
+        if (repeats.length === 0) return null;
+        return (
+          <section>
+            <h2 className="font-semibold text-foreground mb-3">Repeat clients</h2>
+            <div className="space-y-2">
+              {repeats.map((o) => (
+                <Card key={o.name} className="border-border">
+                  <CardContent className="py-3 px-4 flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-lg shrink-0">
+                      🐕
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground">{o.dog}</p>
+                      <p className="text-xs text-muted-foreground">{o.name} · {o.count} walks</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs shrink-0"
+                      onClick={() => navigate(`/app/chat/${o.latestId}`)}
+                    >
+                      <MessageCircle className="h-3.5 w-3.5 mr-1" />
+                      Chat
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Tips */}
       <Card className="border-primary/20 bg-secondary/30">

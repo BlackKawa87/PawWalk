@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getWalkerById } from "@/data/walkers";
 import { calculatePayment, fmt, saveBooking, type Booking } from "@/utils/booking";
+import { getCredits, spendCredits, claimFirstBookingReward } from "@/utils/retention";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,8 @@ import {
   CreditCard,
   Lock,
   Info,
+  MessageCircle,
+  Gift,
 } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -102,6 +105,10 @@ export default function BookingFlow() {
   const [cvv, setCvv] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookingId, setBookingId] = useState("");
+  const [useCredits, setUseCredits] = useState(false);
+  const [isFirstBooking, setIsFirstBooking] = useState(false);
+
+  const availableCredits = getCredits();
 
   if (!walker) {
     return (
@@ -118,6 +125,8 @@ export default function BookingFlow() {
   }
 
   const payment = calculatePayment(walker.pricePerWalk, duration);
+  const creditDiscount = useCredits ? Math.min(availableCredits, payment.total) : 0;
+  const amountDue = Math.max(0, payment.total - creditDiscount);
 
   const minDate = new Date().toISOString().split("T")[0];
 
@@ -129,6 +138,8 @@ export default function BookingFlow() {
     //   const { clientSecret } = await fetch("/api/create-payment-intent", { ... })
     //   await stripe.confirmCardPayment(clientSecret, { ... })
     await new Promise((r) => setTimeout(r, 1800));
+
+    if (useCredits && creditDiscount > 0) spendCredits(creditDiscount);
 
     const id = crypto.randomUUID();
     const booking: Booking = {
@@ -152,6 +163,9 @@ export default function BookingFlow() {
       notes: notes || undefined,
     };
     saveBooking(booking);
+
+    const firstBooking = user ? claimFirstBookingReward(user.id) : false;
+    setIsFirstBooking(firstBooking);
     setBookingId(id);
     setIsProcessing(false);
     setStep(3);
@@ -340,10 +354,19 @@ export default function BookingFlow() {
                   <span className="text-muted-foreground">Walk ({duration} min at £{walker.pricePerWalk}/30 min)</span>
                   <span className="font-medium">{fmt(payment.total)}</span>
                 </div>
+                {useCredits && creditDiscount > 0 && (
+                  <div className="flex justify-between text-green-700">
+                    <span className="flex items-center gap-1">
+                      <Gift className="h-3.5 w-3.5" />
+                      PawGo credits applied
+                    </span>
+                    <span>-{fmt(creditDiscount)}</span>
+                  </div>
+                )}
                 <Separator />
                 <div className="flex justify-between font-bold text-base text-foreground">
-                  <span>Total</span>
-                  <span>{fmt(payment.total)}</span>
+                  <span>Total due</span>
+                  <span>{fmt(amountDue)}</span>
                 </div>
                 <div className="pt-1 border-t border-border/50 mt-2 space-y-1">
                   <div className="flex justify-between text-xs text-muted-foreground">
@@ -356,6 +379,27 @@ export default function BookingFlow() {
                   </div>
                 </div>
               </div>
+
+              {/* Credits toggle */}
+              {availableCredits > 0 && (
+                <div
+                  className="flex items-center justify-between p-3 rounded-lg border border-green-200 bg-green-50 cursor-pointer"
+                  onClick={() => setUseCredits((v) => !v)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-4 w-4 text-green-700 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-green-900">
+                        You have {fmt(availableCredits)} in credits
+                      </p>
+                      <p className="text-xs text-green-700">Apply to this booking</p>
+                    </div>
+                  </div>
+                  <div className={`h-5 w-9 rounded-full transition-colors ${useCredits ? "bg-green-600" : "bg-muted"}`}>
+                    <div className={`h-4 w-4 rounded-full bg-white shadow m-0.5 transition-transform ${useCredits ? "translate-x-4" : "translate-x-0"}`} />
+                  </div>
+                </div>
+              )}
 
               {notes && (
                 <div className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-3">
@@ -389,7 +433,13 @@ export default function BookingFlow() {
 
               {/* Amount */}
               <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 text-center">
-                <p className="text-3xl font-extrabold text-foreground">{fmt(payment.total)}</p>
+                <p className="text-3xl font-extrabold text-foreground">{fmt(amountDue)}</p>
+                {creditDiscount > 0 && (
+                  <p className="text-xs text-green-700 mt-0.5 flex items-center justify-center gap-1">
+                    <Gift className="h-3 w-3" />
+                    {fmt(creditDiscount)} credit discount applied
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground mt-1">{duration}-min walk with {walker.name}</p>
               </div>
 
@@ -473,7 +523,7 @@ export default function BookingFlow() {
                     Processing...
                   </span>
                 ) : (
-                  <>Pay {fmt(payment.total)}</>
+                  <>Pay {fmt(amountDue)}</>
                 )}
               </Button>
             </CardContent>
@@ -523,11 +573,27 @@ export default function BookingFlow() {
                 </p>
               </div>
 
+              {/* First booking reward */}
+              {isFirstBooking && (
+                <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-center space-y-1">
+                  <p className="text-2xl">🎉</p>
+                  <p className="font-semibold text-green-900 text-sm">You've earned £5 in PawGo credits!</p>
+                  <p className="text-xs text-green-700">Applied to your next booking automatically.</p>
+                </div>
+              )}
+
               <div className="flex flex-col gap-2 pt-2">
-                <Button className="w-full h-11" onClick={() => navigate("/app/dashboard")}>
+                <Button
+                  className="w-full h-11"
+                  onClick={() => navigate(`/app/chat/${bookingId}`)}
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Message {walker.name}
+                </Button>
+                <Button variant="outline" className="w-full h-11" onClick={() => navigate("/app/dashboard")}>
                   Back to dashboard
                 </Button>
-                <Button variant="outline" className="w-full h-11" onClick={() => navigate("/app/find")}>
+                <Button variant="ghost" className="w-full h-11" onClick={() => navigate("/app/find")}>
                   Book another walk
                 </Button>
               </div>

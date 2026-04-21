@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { MOCK_WALKERS } from "@/data/walkers";
+import { isFavorite, toggleFavorite } from "@/utils/retention";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +32,7 @@ import {
   Bell,
   SlidersHorizontal,
   ArrowLeft,
+  Heart,
 } from "lucide-react";
 
 export default function FindWalkers() {
@@ -39,6 +41,15 @@ export default function FindWalkers() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("rating");
   const [maxPrice, setMaxPrice] = useState("any");
+  const [favs, setFavs] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(MOCK_WALKERS.map((w) => [w.id, isFavorite(w.id)]))
+  );
+
+  const handleToggleFav = (e: React.MouseEvent, walkerId: string) => {
+    e.stopPropagation();
+    const nowFav = toggleFavorite(walkerId);
+    setFavs((prev) => ({ ...prev, [walkerId]: nowFav }));
+  };
 
   const filtered = MOCK_WALKERS
     .filter((w) => {
@@ -154,6 +165,14 @@ export default function FindWalkers() {
           </div>
         </div>
 
+        {/* Contact control banner */}
+        <div className="flex items-start gap-2.5 bg-secondary/50 border border-border rounded-lg px-4 py-3 mb-6 text-xs text-muted-foreground">
+          <Shield className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <p>
+            For your safety, contact details are only shared after booking. Keep all communication within PawGo.
+          </p>
+        </div>
+
         {/* Walker grid */}
         {filtered.length === 0 ? (
           <div className="text-center py-16">
@@ -166,7 +185,8 @@ export default function FindWalkers() {
             {filtered.map((walker) => (
               <Card
                 key={walker.id}
-                className="border-border hover:border-primary/40 hover:shadow-sm transition-all"
+                className="border-border hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
+                onClick={() => navigate(`/app/walker/${walker.id}`)}
               >
                 <CardContent className="pt-5 pb-4">
                   {/* Walker header */}
@@ -192,6 +212,14 @@ export default function FindWalkers() {
                         <span>({walker.reviews} reviews)</span>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleFav(e, walker.id)}
+                      className="shrink-0 p-1 -mt-0.5 -mr-1 rounded-full hover:bg-muted transition-colors"
+                      aria-label={favs[walker.id] ? "Remove from favourites" : "Add to favourites"}
+                    >
+                      <Heart className={`h-4 w-4 transition-colors ${favs[walker.id] ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+                    </button>
                   </div>
 
                   {/* Bio */}
@@ -228,7 +256,7 @@ export default function FindWalkers() {
                     <Button
                       size="sm"
                       className="h-9"
-                      onClick={() => navigate(`/app/book/${walker.id}`)}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/app/book/${walker.id}`); }}
                     >
                       Book now
                     </Button>

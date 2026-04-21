@@ -12,6 +12,8 @@ import SignupWalker from "./pages/SignupWalker";
 import Dashboard from "./pages/app/Dashboard";
 import FindWalkers from "./pages/app/FindWalkers";
 import BookingFlow from "./pages/app/BookingFlow";
+import WalkerProfile from "./pages/app/WalkerProfile";
+import Chat from "./pages/app/Chat";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
@@ -53,6 +55,22 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <BookingFlow />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/app/walker/:walkerId"
+      element={
+        <ProtectedRoute>
+          <WalkerProfile />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/app/chat/:bookingId"
+      element={
+        <ProtectedRoute>
+          <Chat />
         </ProtectedRoute>
       }
     />
