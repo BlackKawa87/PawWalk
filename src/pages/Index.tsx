@@ -407,9 +407,15 @@ export default function Index() {
             <a href="#" className="hover:text-foreground transition-colors">Terms</a>
             <a href="#" className="hover:text-foreground transition-colors">Contact</a>
           </nav>
-          <p className="text-sm text-muted-foreground">
-            © 2026 PawGo. All rights reserved.
-          </p>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">
+              © 2026 PawGo. All rights reserved.
+            </p>
+            <p className="text-xs text-muted-foreground/60 mt-1 max-w-xs text-center md:text-right">
+              PawGo is a connecting platform. Walkers are independent contractors. PawGo is not responsible for pet care or walker conduct.{" "}
+              <a href="/terms" className="hover:underline">Terms</a>
+            </p>
+          </div>
         </div>
       </footer>
     </div>

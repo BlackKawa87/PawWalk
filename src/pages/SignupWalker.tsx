@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, ArrowRight, CheckCircle, Shield } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, ArrowRight, CheckCircle, Shield, Info } from "lucide-react";
 
 const accountSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -24,6 +25,7 @@ const profileSchema = z.object({
   bio: z.string().min(50, "Bio must be at least 50 characters").max(500, "Bio must be under 500 characters"),
   experience: z.string().min(1, "Please describe your experience"),
   pricePerWalk: z.string().min(1, "Please set a price per walk"),
+  independentContractor: z.boolean().refine((v) => v === true, "You must confirm your independent contractor status"),
   agreedToTerms: z.boolean().refine((v) => v === true, "You must agree to the terms"),
 });
 
@@ -237,16 +239,36 @@ export default function SignupWalker() {
                     <p className="text-xs text-destructive">{profileForm.formState.errors.pricePerWalk.message}</p>
                   )}
                 </div>
-                <div className="flex items-start gap-3 pt-2">
+                <Alert className="border-border bg-muted/40">
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                  <AlertDescription className="text-xs text-muted-foreground leading-relaxed pl-1">
+                    By joining PawGo, you operate as an <strong>independent contractor</strong>, not an employee. PawGo provides the platform to connect you with clients — it does not direct, supervise, or control your services.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="independentContractor"
+                    onCheckedChange={(v) => profileForm.setValue("independentContractor", !!v, { shouldValidate: true })}
+                  />
+                  <Label htmlFor="independentContractor" className="text-sm font-normal leading-relaxed cursor-pointer">
+                    I confirm I am operating as an <strong>independent contractor</strong> and understand PawGo is not my employer and does not supervise my services.
+                  </Label>
+                </div>
+                {profileForm.formState.errors.independentContractor && (
+                  <p className="text-xs text-destructive">{profileForm.formState.errors.independentContractor.message}</p>
+                )}
+
+                <div className="flex items-start gap-3">
                   <Checkbox
                     id="terms"
-                    onCheckedChange={(v) => profileForm.setValue("agreedToTerms", !!v)}
+                    onCheckedChange={(v) => profileForm.setValue("agreedToTerms", !!v, { shouldValidate: true })}
                   />
                   <Label htmlFor="terms" className="text-sm font-normal leading-relaxed cursor-pointer">
                     I agree to PawGo's{" "}
-                    <a href="#" className="text-primary hover:underline">Terms of Service</a>
+                    <a href="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</a>
                     {" "}and{" "}
-                    <a href="#" className="text-primary hover:underline">Walker Code of Conduct</a>
+                    <a href="/terms" target="_blank" className="text-primary hover:underline">Walker Code of Conduct</a>
                   </Label>
                 </div>
                 {profileForm.formState.errors.agreedToTerms && (

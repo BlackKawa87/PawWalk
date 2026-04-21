@@ -16,13 +16,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, ArrowRight, CheckCircle, Info } from "lucide-react";
 
 const accountSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   location: z.string().min(3, "Please enter your city or postcode"),
+  understoodPlatform: z.boolean().refine((v) => v === true, "Please confirm you understand PawGo's role"),
 });
 
 const dogSchema = z.object({
@@ -163,6 +166,28 @@ export default function SignupOwner() {
                     <p className="text-xs text-destructive">{accountForm.formState.errors.location.message}</p>
                   )}
                 </div>
+
+                <Alert className="border-border bg-muted/40">
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                  <AlertDescription className="text-xs text-muted-foreground leading-relaxed pl-1">
+                    PawGo is a platform that connects dog owners with independent walkers. PawGo does not provide dog walking services and is not responsible for the care, safety, or supervision of pets.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="understoodPlatform"
+                    onCheckedChange={(v) => accountForm.setValue("understoodPlatform", !!v, { shouldValidate: true })}
+                  />
+                  <Label htmlFor="understoodPlatform" className="text-sm font-normal leading-relaxed cursor-pointer">
+                    I understand PawGo is a connecting platform only and is not responsible for pet care or walker conduct.{" "}
+                    <a href="/terms" target="_blank" className="text-primary hover:underline">Read our Terms</a>
+                  </Label>
+                </div>
+                {accountForm.formState.errors.understoodPlatform && (
+                  <p className="text-xs text-destructive">{accountForm.formState.errors.understoodPlatform.message}</p>
+                )}
+
                 <Button type="submit" className="w-full h-11 mt-2">
                   Continue
                   <ArrowRight className="ml-2 h-4 w-4" />

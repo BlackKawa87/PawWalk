@@ -10,6 +10,7 @@ import Signup from "./pages/Signup";
 import SignupOwner from "./pages/SignupOwner";
 import SignupWalker from "./pages/SignupWalker";
 import Dashboard from "./pages/app/Dashboard";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const AppRoutes = () => (
     <Route path="/signup" element={<Signup />} />
     <Route path="/signup/owner" element={<SignupOwner />} />
     <Route path="/signup/walker" element={<SignupWalker />} />
+    <Route path="/terms" element={<Terms />} />
     <Route
       path="/app/dashboard"
       element={

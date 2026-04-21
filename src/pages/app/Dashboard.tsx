@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   MapPin,
   Star,
@@ -24,6 +25,7 @@ import {
   Calendar,
   CheckCircle,
   Bell,
+  Info,
 } from "lucide-react";
 
 // ─── Mock data ──────────────────────────────────────────────────────────────
@@ -315,6 +317,15 @@ function OwnerDashboard() {
           ))}
         </div>
       </section>
+
+      {/* Platform disclaimer */}
+      <Alert className="border-border bg-muted/30">
+        <Info className="h-4 w-4 text-muted-foreground" />
+        <AlertDescription className="text-xs text-muted-foreground leading-relaxed pl-1">
+          PawGo connects you with independent walkers. Walkers are self-employed contractors — PawGo does not provide walking services or supervise pet care.{" "}
+          <a href="/terms" className="text-primary hover:underline">Learn more</a>
+        </AlertDescription>
+      </Alert>
 
       {/* Suggested walkers */}
       <section>
