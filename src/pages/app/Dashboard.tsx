@@ -11,6 +11,7 @@ import {
   type Booking,
 } from "@/utils/booking";
 import { getCredits, getFavorites } from "@/utils/retention";
+import { getFeeStatus } from "@/utils/serviceFee";
 import { getWalkerById } from "@/data/walkers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +48,7 @@ import {
   Gift,
   MessageCircle,
   LayoutDashboard,
+  AlertCircle,
 } from "lucide-react";
 
 // ─── Shared Nav ──────────────────────────────────────────────────────────────
@@ -116,6 +118,7 @@ function OwnerDashboard() {
   const pastWalks = bookings.filter((b) => b.status !== "confirmed" && b.status !== "pending");
   const hasBookings = bookings.length > 0;
   const credits = getCredits();
+  const feeStatus = user ? getFeeStatus(user.id, user.signedUpAt) : null;
   const favWalkerIds = getFavorites();
   const favWalkers = favWalkerIds.map((id) => getWalkerById(id)).filter(Boolean) as NonNullable<ReturnType<typeof getWalkerById>>[];
 
@@ -151,6 +154,45 @@ function OwnerDashboard() {
             <p className="text-xs text-green-700">Applied automatically on your next booking</p>
           </div>
           <ArrowRight className="h-4 w-4 text-green-700 shrink-0" />
+        </div>
+      )}
+
+      {/* Service fee status banner */}
+      {feeStatus && (
+        <div
+          className={`flex items-center gap-3 rounded-xl px-4 py-3 ${
+            feeStatus.charged
+              ? "bg-amber-50 border border-amber-200"
+              : "bg-green-50 border border-green-200"
+          }`}
+        >
+          {feeStatus.charged ? (
+            <AlertCircle className="h-5 w-5 text-amber-700 shrink-0" />
+          ) : (
+            <CheckCircle className="h-5 w-5 text-green-700 shrink-0" />
+          )}
+          <div className="flex-1">
+            {feeStatus.charged ? (
+              <>
+                <p className="text-sm font-semibold text-amber-900">£1.50 service fee applies to your next booking</p>
+                <p className="text-xs text-amber-700">Book a walk to become an active member and waive it</p>
+              </>
+            ) : feeStatus.reason === "active" ? (
+              <>
+                <p className="text-sm font-semibold text-green-900">No service fee — you're an active member ✓</p>
+                <p className="text-xs text-green-700">
+                  Book again within {feeStatus.safeDaysLeft} day{feeStatus.safeDaysLeft !== 1 ? "s" : ""} to stay fee-free
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-green-900">No service fee — welcome to PawGo! ✓</p>
+                <p className="text-xs text-green-700">
+                  {feeStatus.safeDaysLeft} day{feeStatus.safeDaysLeft !== 1 ? "s" : ""} remaining in your free period
+                </p>
+              </>
+            )}
+          </div>
         </div>
       )}
 

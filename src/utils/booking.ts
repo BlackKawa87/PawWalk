@@ -37,6 +37,7 @@ export interface Booking {
   total: number;
   platformFee: number;
   walkerEarnings: number;
+  serviceFee: number;
   currency: Currency;
   status: BookingStatus;
   paymentStatus: PaymentStatus;

@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getWalkerById } from "@/data/walkers";
 import { calculatePayment, fmt, saveBooking, type Booking } from "@/utils/booking";
 import { getCredits, spendCredits, claimFirstBookingReward } from "@/utils/retention";
+import { getFeeStatus, SERVICE_FEE } from "@/utils/serviceFee";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,6 +110,8 @@ export default function BookingFlow() {
   const [isFirstBooking, setIsFirstBooking] = useState(false);
 
   const availableCredits = getCredits();
+  const feeStatus = user ? getFeeStatus(user.id, user.signedUpAt) : null;
+  const serviceFeeAmount = feeStatus?.charged ? SERVICE_FEE : 0;
 
   if (!walker) {
     return (
@@ -125,8 +128,8 @@ export default function BookingFlow() {
   }
 
   const payment = calculatePayment(walker.pricePerWalk, duration);
-  const creditDiscount = useCredits ? Math.min(availableCredits, payment.total) : 0;
-  const amountDue = Math.max(0, payment.total - creditDiscount);
+  const creditDiscount = useCredits ? Math.min(availableCredits, payment.total + serviceFeeAmount) : 0;
+  const amountDue = Math.max(0, payment.total + serviceFeeAmount - creditDiscount);
 
   const minDate = new Date().toISOString().split("T")[0];
 
@@ -156,6 +159,7 @@ export default function BookingFlow() {
       total: payment.total,
       platformFee: payment.platformFee,
       walkerEarnings: payment.walkerEarnings,
+      serviceFee: serviceFeeAmount,
       currency: "GBP",
       status: "confirmed",
       paymentStatus: "paid",
@@ -354,6 +358,24 @@ export default function BookingFlow() {
                   <span className="text-muted-foreground">Walk ({duration} min at £{walker.pricePerWalk}/30 min)</span>
                   <span className="font-medium">{fmt(payment.total)}</span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Service fee</span>
+                  {feeStatus?.charged ? (
+                    <span className="font-medium">{fmt(SERVICE_FEE)}</span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-green-700 font-medium">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      Free
+                    </span>
+                  )}
+                </div>
+                {!feeStatus?.charged && feeStatus && (
+                  <p className="text-xs text-green-700 -mt-1">
+                    {feeStatus.reason === "active"
+                      ? `Active member — book again within ${feeStatus.safeDaysLeft} days to stay fee-free`
+                      : `Welcome offer — ${feeStatus.safeDaysLeft} days remaining`}
+                  </p>
+                )}
                 {useCredits && creditDiscount > 0 && (
                   <div className="flex justify-between text-green-700">
                     <span className="flex items-center gap-1">
@@ -556,7 +578,7 @@ export default function BookingFlow() {
                 <Separator />
                 <div className="flex justify-between font-bold">
                   <span>Total paid</span>
-                  <span>{fmt(payment.total)}</span>
+                  <span>{fmt(amountDue)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground pt-1">
                   Ref: {bookingId.slice(0, 8).toUpperCase()}

@@ -8,6 +8,7 @@ export interface AuthUser {
   email: string;
   role: UserRole;
   location?: string;
+  signedUpAt?: string;
 }
 
 interface AuthContextType {
@@ -46,14 +47,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       role,
       location: "London, UK",
+      signedUpAt: new Date().toISOString(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
     setUser(mockUser);
   };
 
   const loginAs = (userData: AuthUser) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
-    setUser(userData);
+    const withDate: AuthUser = { signedUpAt: new Date().toISOString(), ...userData };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(withDate));
+    setUser(withDate);
   };
 
   const logout = () => {
