@@ -1,9 +1,21 @@
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  getBookingsByOwner,
+  getBookingsByWalker,
+  getWalkerOnboarding,
+  setWalkerOnboarding,
+  isWalkerLive,
+  fmt,
+  type Booking,
+} from "@/utils/booking";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +23,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   MapPin,
   Star,
@@ -25,103 +36,14 @@ import {
   Calendar,
   CheckCircle,
   Bell,
+  Zap,
+  User,
+  Shield,
   Info,
+  ArrowRight,
 } from "lucide-react";
 
-// ─── Mock data ──────────────────────────────────────────────────────────────
-
-const MOCK_UPCOMING_WALKS = [
-  {
-    id: "1",
-    walkerName: "Emily Carter",
-    walkerRating: 4.9,
-    walkerReviews: 128,
-    date: "Tomorrow",
-    time: "9:00 AM",
-    duration: "45 min",
-    dogName: "Buddy",
-    status: "confirmed",
-    price: "£18",
-  },
-  {
-    id: "2",
-    walkerName: "James Reid",
-    walkerRating: 4.8,
-    walkerReviews: 74,
-    date: "Thursday",
-    time: "8:30 AM",
-    duration: "30 min",
-    dogName: "Buddy",
-    status: "confirmed",
-    price: "£14",
-  },
-];
-
-const MOCK_RECENT_WALKS = [
-  {
-    id: "1",
-    walkerName: "Emily Carter",
-    date: "Monday",
-    duration: "45 min",
-    note: "Buddy was fantastic today! We explored the park and he made a new friend. He's exhausted in the best way.",
-    rating: 5,
-  },
-  {
-    id: "2",
-    walkerName: "James Reid",
-    date: "Last Friday",
-    duration: "30 min",
-    note: "Quick morning walk around the block. Well-behaved as always!",
-    rating: 5,
-  },
-];
-
-const MOCK_SUGGESTED_WALKERS = [
-  { id: "1", name: "Emily Carter", rating: 4.9, reviews: 128, price: "£15/walk", distance: "0.3 mi", verified: true },
-  { id: "2", name: "James Reid", rating: 4.8, reviews: 74, price: "£14/walk", distance: "0.5 mi", verified: true },
-  { id: "3", name: "Sophie Walsh", rating: 5.0, reviews: 41, price: "£16/walk", distance: "0.8 mi", verified: true },
-];
-
-const MOCK_WALKER_BOOKINGS = [
-  {
-    id: "1",
-    ownerName: "Sarah T.",
-    dogName: "Milo",
-    dogBreed: "Golden Retriever",
-    dogSize: "Large",
-    date: "Tomorrow",
-    time: "9:00 AM",
-    duration: "45 min",
-    price: "£18",
-    status: "confirmed",
-  },
-  {
-    id: "2",
-    ownerName: "James K.",
-    dogName: "Biscuit",
-    dogBreed: "French Bulldog",
-    dogSize: "Small",
-    date: "Tomorrow",
-    time: "2:00 PM",
-    duration: "30 min",
-    price: "£14",
-    status: "pending",
-  },
-  {
-    id: "3",
-    ownerName: "Emma R.",
-    dogName: "Luna",
-    dogBreed: "Labrador",
-    dogSize: "Large",
-    date: "Thursday",
-    time: "8:30 AM",
-    duration: "30 min",
-    price: "£14",
-    status: "confirmed",
-  },
-];
-
-// ─── Shared Nav ─────────────────────────────────────────────────────────────
+// ─── Shared Nav ──────────────────────────────────────────────────────────────
 
 function AppNav() {
   const { user, logout } = useAuth();
@@ -134,13 +56,11 @@ function AppNav() {
           <span className="text-xl">🐾</span>
           <span className="font-bold text-lg text-primary">PawGo</span>
         </Link>
-
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-9 w-9 relative">
             <Bell className="h-4 w-4" />
             <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-accent" />
           </Button>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="gap-2 h-9 px-2">
@@ -175,31 +95,67 @@ function AppNav() {
   );
 }
 
-// ─── Owner Dashboard ─────────────────────────────────────────────────────────
+// ─── Owner Dashboard ──────────────────────────────────────────────────────────
 
 function OwnerDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const firstName = user?.name?.split(" ")[0] ?? "there";
+  const bookings = user ? getBookingsByOwner(user.id) : [];
+  const upcoming = bookings.filter((b) => b.status === "confirmed");
+  const hasBookings = bookings.length > 0;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
       {/* Greeting */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
             Hey {firstName} 👋
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            Buddy is waiting for his next adventure.
+            {hasBookings
+              ? `You have ${upcoming.length} upcoming walk${upcoming.length !== 1 ? "s" : ""}.`
+              : "Ready to book your first walk?"}
           </p>
         </div>
-        <Button size="sm" asChild>
-          <Link to="/app/find">
-            <Plus className="h-4 w-4 mr-1.5" />
-            Book a walk
-          </Link>
+        <Button size="sm" onClick={() => navigate("/app/find")}>
+          <Plus className="h-4 w-4 mr-1.5" />
+          Book a walk
         </Button>
       </div>
+
+      {/* FTUE — no bookings yet */}
+      {!hasBookings && (
+        <Card className="border-primary/30 bg-gradient-to-br from-secondary/60 via-background to-background overflow-hidden">
+          <CardContent className="pt-6 pb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+              <p className="font-bold text-foreground">Book your first walk in under 60 seconds</p>
+            </div>
+            <ol className="space-y-2 mb-5 text-sm text-muted-foreground">
+              {[
+                "Browse verified walkers near you",
+                "Pick a date, time and duration",
+                "Pay securely — walk confirmed instantly",
+              ].map((step, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <span className="h-5 w-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                    {i + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+            <Button className="w-full sm:w-auto" onClick={() => navigate("/app/find")}>
+              Find a walker now
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Dog card */}
       <Card className="border-border bg-gradient-to-r from-secondary/60 to-background">
@@ -226,118 +182,96 @@ function OwnerDashboard() {
         </CardContent>
       </Card>
 
-      {/* Upcoming walks */}
+      {/* Upcoming walks — real data or empty state */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-foreground">Upcoming walks</h2>
-          <Button variant="ghost" size="sm" className="text-primary h-7 px-2 text-xs">
-            View all <ChevronRight className="h-3 w-3 ml-1" />
-          </Button>
+          {upcoming.length > 0 && (
+            <Button variant="ghost" size="sm" className="text-primary h-7 px-2 text-xs">
+              View all <ChevronRight className="h-3 w-3 ml-1" />
+            </Button>
+          )}
         </div>
-        <div className="space-y-3">
-          {MOCK_UPCOMING_WALKS.map((walk) => (
-            <Card key={walk.id} className="border-border">
-              <CardContent className="py-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Avatar className="h-10 w-10 shrink-0">
-                      <AvatarFallback className="bg-secondary text-primary font-semibold text-sm">
-                        {walk.walkerName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm text-foreground">{walk.walkerName}</p>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                        <Star className="h-3 w-3 fill-accent text-accent" />
-                        <span>{walk.walkerRating}</span>
-                        <span>·</span>
-                        <span>{walk.walkerReviews} reviews</span>
-                      </div>
-                    </div>
-                  </div>
-                  <Badge
-                    className={
-                      walk.status === "confirmed"
-                        ? "bg-green-100 text-green-700 border-0 shrink-0"
-                        : "bg-amber-100 text-amber-700 border-0 shrink-0"
-                    }
-                  >
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    {walk.status}
-                  </Badge>
-                </div>
-                <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {walk.date} at {walk.time}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    {walk.duration}
-                  </span>
-                  <span className="font-medium text-foreground ml-auto">{walk.price}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {upcoming.length === 0 ? (
+          <Card className="border-dashed border-border">
+            <CardContent className="py-8 text-center">
+              <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-3 opacity-40" />
+              <p className="text-sm font-medium text-foreground">No upcoming walks</p>
+              <p className="text-xs text-muted-foreground mt-1 mb-4">Book your first walk to get started.</p>
+              <Button size="sm" onClick={() => navigate("/app/find")}>Find a walker</Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {upcoming.slice(0, 3).map((booking) => (
+              <BookingCard key={booking.id} booking={booking} role="owner" />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Recent walk reports */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-foreground">Recent walk reports</h2>
-        </div>
-        <div className="space-y-3">
-          {MOCK_RECENT_WALKS.map((walk) => (
-            <Card key={walk.id} className="border-border">
-              <CardContent className="py-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
-                    <Camera className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-sm text-foreground">{walk.walkerName}</p>
-                      <span className="text-xs text-muted-foreground shrink-0">{walk.date}</span>
+      {bookings.filter((b) => b.status === "completed").length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-foreground">Recent walk reports</h2>
+          </div>
+          <div className="space-y-3">
+            {bookings.filter((b) => b.status === "completed").slice(0, 2).map((booking) => (
+              <Card key={booking.id} className="border-border">
+                <CardContent className="py-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                      <Camera className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      {Array.from({ length: walk.rating }).map((_, i) => (
-                        <Star key={i} className="h-3 w-3 fill-accent text-accent" />
-                      ))}
-                      <span className="text-xs text-muted-foreground ml-1">{walk.duration}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold text-sm text-foreground">{booking.walkerName}</p>
+                        <span className="text-xs text-muted-foreground shrink-0">{booking.date}</span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={i} className="h-3 w-3 fill-accent text-accent" />
+                        ))}
+                        <span className="text-xs text-muted-foreground ml-1">{booking.duration} min</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed italic">
-                  "{walk.note}"
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Platform disclaimer */}
       <Alert className="border-border bg-muted/30">
         <Info className="h-4 w-4 text-muted-foreground" />
         <AlertDescription className="text-xs text-muted-foreground leading-relaxed pl-1">
           PawGo connects you with independent walkers. Walkers are self-employed contractors — PawGo does not provide walking services or supervise pet care.{" "}
-          <a href="/terms" className="text-primary hover:underline">Learn more</a>
+          <Link to="/terms" className="text-primary hover:underline">Learn more</Link>
         </AlertDescription>
       </Alert>
 
-      {/* Suggested walkers */}
+      {/* Walkers near you */}
       <section>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-foreground">Walkers near you</h2>
-          <Button variant="ghost" size="sm" className="text-primary h-7 px-2 text-xs">
+          <Button variant="ghost" size="sm" className="text-primary h-7 px-2 text-xs" onClick={() => navigate("/app/find")}>
             See all <ChevronRight className="h-3 w-3 ml-1" />
           </Button>
         </div>
-        <div className="grid sm:grid-cols-3 gap-3">
-          {MOCK_SUGGESTED_WALKERS.map((w) => (
-            <Card key={w.id} className="border-border cursor-pointer hover:border-primary/40 transition-colors">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[
+            { id: "w1", name: "Emily Carter", rating: 4.9, reviews: 128, price: "£15/walk", distance: "0.3 mi", verified: true },
+            { id: "w2", name: "James Reid", rating: 4.8, reviews: 74, price: "£14/walk", distance: "0.5 mi", verified: true },
+            { id: "w3", name: "Sophie Walsh", rating: 5.0, reviews: 41, price: "£16/walk", distance: "0.8 mi", verified: true },
+          ].map((w) => (
+            <Card
+              key={w.id}
+              className="border-border cursor-pointer hover:border-primary/40 transition-colors"
+              onClick={() => navigate(`/app/book/${w.id}`)}
+            >
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center gap-3 mb-3">
                   <Avatar className="h-10 w-10">
@@ -355,14 +289,12 @@ function OwnerDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />{w.distance}
-                  </span>
+                  <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{w.distance}</span>
                   <span className="font-semibold text-foreground">{w.price}</span>
                 </div>
                 {w.verified && (
                   <Badge className="mt-2 bg-primary/10 text-primary border-0 text-xs w-full justify-center">
-                    Verified
+                    <Shield className="h-2.5 w-2.5 mr-1" /> Verified
                   </Badge>
                 )}
               </CardContent>
@@ -374,109 +306,265 @@ function OwnerDashboard() {
   );
 }
 
+// ─── Shared booking card ──────────────────────────────────────────────────────
+
+function BookingCard({ booking, role }: { booking: Booking; role: "owner" | "walker" }) {
+  return (
+    <Card className="border-border">
+      <CardContent className="py-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Avatar className="h-10 w-10 shrink-0">
+              <AvatarFallback className="bg-secondary text-primary font-semibold text-sm">
+                {role === "owner"
+                  ? booking.walkerName.charAt(0)
+                  : booking.ownerName.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="font-semibold text-sm text-foreground">
+                {role === "owner" ? booking.walkerName : `${booking.ownerName} — ${booking.ownerDog}`}
+              </p>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                <Star className="h-3 w-3 fill-accent text-accent" />
+                <span>4.9 · confirmed</span>
+              </div>
+            </div>
+          </div>
+          <Badge className="bg-green-100 text-green-700 border-0 shrink-0 text-xs">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            {booking.status}
+          </Badge>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5" />
+            {booking.date} at {booking.time}
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5" />
+            {booking.duration} min
+          </span>
+          <span className="font-medium text-foreground ml-auto">{fmt(booking.total)}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Walker Dashboard ─────────────────────────────────────────────────────────
 
 function WalkerDashboard() {
   const { user } = useAuth();
   const firstName = user?.name?.split(" ")[0] ?? "there";
+  const [ob, setOb] = useState(getWalkerOnboarding);
+  const bookings = user ? getBookingsByWalker(user.id) : [];
+  const pendingBookings = bookings.filter((b) => b.status === "pending");
+  const confirmedBookings = bookings.filter((b) => b.status === "confirmed");
+  const live = isWalkerLive(ob);
+
+  const obSteps = [
+    { key: "hasPhoto" as const, label: "Add a profile photo", desc: "Walkers with photos get 3x more bookings", icon: User },
+    { key: "hasAvailability" as const, label: "Set your availability", desc: "Tell owners when you can walk", icon: Calendar },
+    { key: "hasServiceArea" as const, label: "Set your service area", desc: "Show owners you cover their neighbourhood", icon: MapPin },
+  ];
+  const completedSteps = obSteps.filter((s) => ob[s.key]).length;
+  const obProgress = Math.round((completedSteps / obSteps.length) * 100);
+
+  const handleToggleStep = (key: keyof typeof ob) => {
+    const updated = setWalkerOnboarding({ [key]: !ob[key] });
+    setOb(updated);
+  };
+
+  const totalEarnings = bookings.reduce((sum, b) => sum + b.walkerEarnings, 0);
+  const thisMonthEarnings = bookings
+    .filter((b) => {
+      const d = new Date(b.createdAt);
+      const now = new Date();
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    })
+    .reduce((sum, b) => sum + b.walkerEarnings, 0);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-      {/* Greeting */}
+      {/* Greeting + live status */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
             Hey {firstName} 👋
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            You have 2 walks scheduled for tomorrow.
+            {live
+              ? `You have ${confirmedBookings.length} walk${confirmedBookings.length !== 1 ? "s" : ""} scheduled.`
+              : "Complete your setup to start receiving booking requests."}
           </p>
         </div>
-        <Badge className="bg-green-100 text-green-700 border-0 shrink-0 h-7 px-3">
-          Available
+        <Badge
+          className={
+            live
+              ? "bg-green-100 text-green-700 border-0 shrink-0 h-7 px-3"
+              : "bg-amber-100 text-amber-700 border-0 shrink-0 h-7 px-3"
+          }
+        >
+          {live ? "Live" : "Setup incomplete"}
         </Badge>
       </div>
+
+      {/* Onboarding checklist — shown until complete */}
+      {!live && (
+        <Card className="border-primary/30 bg-secondary/20">
+          <CardHeader className="pb-3 pt-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm text-foreground">Complete your setup</CardTitle>
+              <span className="text-xs text-muted-foreground">{completedSteps}/{obSteps.length} done</span>
+            </div>
+            <Progress value={obProgress} className="h-1.5 mt-2" />
+          </CardHeader>
+          <CardContent className="pb-4 space-y-3">
+            {obSteps.map((s) => (
+              <div
+                key={s.key}
+                className="flex items-start gap-3 cursor-pointer"
+                onClick={() => handleToggleStep(s.key)}
+              >
+                <div
+                  className={`h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                    ob[s.key]
+                      ? "bg-primary border-primary"
+                      : "border-border bg-background"
+                  }`}
+                >
+                  {ob[s.key] && <CheckCircle className="h-3.5 w-3.5 text-primary-foreground" />}
+                </div>
+                <div className="flex-1">
+                  <p className={`text-sm font-medium ${ob[s.key] ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                    {s.label}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{s.desc}</p>
+                </div>
+              </div>
+            ))}
+            {live && (
+              <div className="pt-2">
+                <Button className="w-full h-10">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Go live — start receiving requests
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* FTUE — no bookings yet */}
+      {bookings.length === 0 && live && (
+        <Card className="border-dashed border-border">
+          <CardContent className="py-8 text-center">
+            <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-3 opacity-40" />
+            <p className="text-sm font-medium text-foreground">No requests yet</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+              You'll be notified the moment an owner books you. Make sure your profile photo is up to date.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Earnings summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "This week", value: "£86", icon: TrendingUp, trend: "+12%" },
-          { label: "This month", value: "£342", icon: TrendingUp, trend: "+8%" },
-          { label: "Total walks", value: "47", icon: Clock, trend: null },
-          { label: "Your rating", value: "4.9 ★", icon: Star, trend: null },
+          { label: "This month", value: totalEarnings > 0 ? fmt(thisMonthEarnings) : "—", icon: TrendingUp, trend: totalEarnings > 0 ? null : null },
+          { label: "Total earned", value: totalEarnings > 0 ? fmt(totalEarnings) : "—", icon: TrendingUp, trend: null },
+          { label: "Total walks", value: String(bookings.length) || "0", icon: Clock, trend: null },
+          { label: "Your rating", value: bookings.length > 0 ? "5.0 ★" : "—", icon: Star, trend: null },
         ].map((stat) => (
           <Card key={stat.label} className="border-border">
             <CardContent className="pt-4 pb-3">
               <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
               <p className="text-lg sm:text-xl font-bold text-foreground">{stat.value}</p>
-              {stat.trend && (
-                <p className="text-xs text-green-600 mt-0.5">{stat.trend} vs last week</p>
-              )}
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Booking requests + upcoming */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-foreground">Bookings</h2>
-        </div>
-        <div className="space-y-3">
-          {MOCK_WALKER_BOOKINGS.map((booking) => (
-            <Card key={booking.id} className="border-border">
-              <CardContent className="py-4">
-                <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-xl shrink-0">
-                    🐕
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-sm text-foreground">
-                          {booking.dogName}
-                          <span className="text-muted-foreground font-normal"> · {booking.dogBreed}</span>
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Owner: {booking.ownerName} · {booking.dogSize}
-                        </p>
-                      </div>
-                      <Badge
-                        className={
-                          booking.status === "confirmed"
-                            ? "bg-green-100 text-green-700 border-0 shrink-0"
-                            : "bg-amber-100 text-amber-700 border-0 shrink-0"
-                        }
-                      >
-                        {booking.status}
-                      </Badge>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {booking.date} at {booking.time}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {booking.duration}
-                      </span>
-                      <span className="font-semibold text-foreground ml-auto">{booking.price}</span>
-                    </div>
-                    {booking.status === "pending" && (
-                      <div className="flex gap-2 mt-3">
-                        <Button size="sm" className="h-10 text-xs flex-1">Accept</Button>
-                        <Button size="sm" variant="outline" className="h-10 text-xs flex-1">Decline</Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+      {/* Earnings estimate — always shown to motivate */}
+      <Card className="border-border bg-gradient-to-r from-secondary/40 to-background">
+        <CardContent className="py-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <TrendingUp className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm text-foreground">Earning potential</p>
+              <p className="text-xs text-muted-foreground">
+                With just 5 walks/week, walkers in your area earn{" "}
+                <span className="font-semibold text-foreground">£250–£400/month</span> (after PawGo commission).
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Quick tips */}
+      {/* Booking requests */}
+      {(pendingBookings.length > 0 || confirmedBookings.length > 0) && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-foreground">Your bookings</h2>
+          </div>
+          <div className="space-y-3">
+            {[...pendingBookings, ...confirmedBookings].map((booking) => (
+              <Card key={booking.id} className="border-border">
+                <CardContent className="py-4">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-xl shrink-0">
+                      🐕
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-sm text-foreground">
+                            {booking.ownerDog}
+                            <span className="text-muted-foreground font-normal"> · {booking.ownerName}</span>
+                          </p>
+                        </div>
+                        <Badge
+                          className={
+                            booking.status === "confirmed"
+                              ? "bg-green-100 text-green-700 border-0 shrink-0 text-xs"
+                              : "bg-amber-100 text-amber-700 border-0 shrink-0 text-xs"
+                          }
+                        >
+                          {booking.status}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {booking.date} at {booking.time}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
+                          {booking.duration} min
+                        </span>
+                        <span className="font-semibold text-foreground ml-auto">
+                          {fmt(booking.walkerEarnings)} <span className="text-xs font-normal text-muted-foreground">you earn</span>
+                        </span>
+                      </div>
+                      {booking.status === "pending" && (
+                        <div className="flex gap-2 mt-3">
+                          <Button size="sm" className="h-10 text-xs flex-1">Accept</Button>
+                          <Button size="sm" variant="outline" className="h-10 text-xs flex-1">Decline</Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Tips */}
       <Card className="border-primary/20 bg-secondary/30">
         <CardHeader className="pb-2 pt-4">
           <CardTitle className="text-sm text-primary">Tips to get more bookings</CardTitle>
@@ -500,7 +588,7 @@ function WalkerDashboard() {
   );
 }
 
-// ─── Main export ─────────────────────────────────────────────────────────────
+// ─── Main export ──────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const { user } = useAuth();

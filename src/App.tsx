@@ -10,6 +10,8 @@ import Signup from "./pages/Signup";
 import SignupOwner from "./pages/SignupOwner";
 import SignupWalker from "./pages/SignupWalker";
 import Dashboard from "./pages/app/Dashboard";
+import FindWalkers from "./pages/app/FindWalkers";
+import BookingFlow from "./pages/app/BookingFlow";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
@@ -35,6 +37,22 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <Dashboard />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/app/find"
+      element={
+        <ProtectedRoute>
+          <FindWalkers />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/app/book/:walkerId"
+      element={
+        <ProtectedRoute>
+          <BookingFlow />
         </ProtectedRoute>
       }
     />
