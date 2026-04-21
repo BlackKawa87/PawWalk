@@ -368,16 +368,6 @@ export default function BookingFlow() {
                   <span>Total due</span>
                   <span>{fmt(amountDue)}</span>
                 </div>
-                <div className="pt-1 border-t border-border/50 mt-2 space-y-1">
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Platform fee (20%)</span>
-                    <span>{fmt(payment.platformFee)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Walker earnings (80%)</span>
-                    <span>{fmt(payment.walkerEarnings)}</span>
-                  </div>
-                </div>
               </div>
 
               {/* Credits toggle */}
