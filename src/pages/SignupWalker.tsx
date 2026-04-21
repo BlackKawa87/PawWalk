@@ -233,7 +233,7 @@ export default function SignupWalker() {
                     {...profileForm.register("pricePerWalk")}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Typical range: £12–25 (UK) / $18–35 (USA). PawGo takes 18% commission.
+                    Typical range: £12–25 (UK) / $18–35 (USA). You get paid automatically after every walk.
                   </p>
                   {profileForm.formState.errors.pricePerWalk && (
                     <p className="text-xs text-destructive">{profileForm.formState.errors.pricePerWalk.message}</p>

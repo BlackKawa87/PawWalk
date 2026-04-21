@@ -617,7 +617,7 @@ function WalkerDashboard() {
               <p className="font-semibold text-sm text-foreground">Earning potential</p>
               <p className="text-xs text-muted-foreground">
                 With just 5 walks/week, walkers in your area earn{" "}
-                <span className="font-semibold text-foreground">£250–£400/month</span> (after PawGo commission).
+                <span className="font-semibold text-foreground">£250–£400/month</span> — paid directly to you.
               </p>
             </div>
           </div>
@@ -666,7 +666,7 @@ function WalkerDashboard() {
                           {booking.duration} min
                         </span>
                         <span className="font-semibold text-foreground ml-auto">
-                          {fmt(booking.walkerEarnings)} <span className="text-xs font-normal text-muted-foreground">you earn</span>
+                          {fmt(booking.walkerEarnings)}
                         </span>
                       </div>
                       {booking.status === "pending" && (
