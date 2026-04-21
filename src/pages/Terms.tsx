@@ -9,7 +9,7 @@ const sections = [
     id: "platform-role",
     title: "1. Platform Role",
     content: [
-      "PawGo is a technology platform that connects dog owners ("Owners") with independent dog walkers ("Walkers"). PawGo does not itself provide dog walking, pet care, or any related services.",
+      "PawGo is a technology platform that connects dog owners with independent dog walkers. PawGo does not itself provide dog walking, pet care, or any related services.",
       "PawGo is not a dog walking company. The company does not employ Walkers and is not responsible for the actions, omissions, quality, safety, or outcome of any services provided by Walkers.",
       "Any service agreement is formed directly between the Owner and the Walker. PawGo facilitates this connection but is not a party to that agreement.",
     ],
