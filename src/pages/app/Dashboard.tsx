@@ -46,6 +46,7 @@ import {
   Heart,
   Gift,
   MessageCircle,
+  LayoutDashboard,
 } from "lucide-react";
 
 // ─── Shared Nav ──────────────────────────────────────────────────────────────
@@ -83,6 +84,10 @@ function AppNav() {
               <DropdownMenuItem>
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/admin")}>
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Admin panel
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

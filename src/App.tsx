@@ -14,6 +14,7 @@ import FindWalkers from "./pages/app/FindWalkers";
 import BookingFlow from "./pages/app/BookingFlow";
 import WalkerProfile from "./pages/app/WalkerProfile";
 import Chat from "./pages/app/Chat";
+import Admin from "./pages/admin/Admin";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
@@ -74,6 +75,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     />
+    <Route path="/admin" element={<Admin />} />
     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
     <Route path="*" element={<NotFound />} />
   </Routes>

@@ -406,6 +406,7 @@ export default function Index() {
             <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
             <a href="#" className="hover:text-foreground transition-colors">Terms</a>
             <a href="#" className="hover:text-foreground transition-colors">Contact</a>
+            <Link to="/admin" className="hover:text-foreground transition-colors opacity-50 hover:opacity-100">Admin</Link>
           </nav>
           <div className="text-right">
             <p className="text-sm text-muted-foreground">
