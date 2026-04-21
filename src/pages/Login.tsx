@@ -79,7 +79,7 @@ export default function Login() {
               <Button
                 variant="secondary"
                 size="sm"
-                className="text-xs h-8"
+                className="text-xs h-10"
                 onClick={() => loginDemo("owner")}
               >
                 Demo: Dog Owner
@@ -87,7 +87,7 @@ export default function Login() {
               <Button
                 variant="secondary"
                 size="sm"
-                className="text-xs h-8"
+                className="text-xs h-10"
                 onClick={() => loginDemo("walker")}
               >
                 Demo: Walker

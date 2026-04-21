@@ -60,21 +60,21 @@ export default function Index() {
           <div className="md:hidden border-t border-border bg-background px-4 pb-4 pt-3 space-y-1">
             <a
               href="#how-it-works"
-              className="block py-2 text-sm text-muted-foreground hover:text-foreground"
+              className="flex items-center py-3 text-sm text-muted-foreground hover:text-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
               How it works
             </a>
             <a
               href="#features"
-              className="block py-2 text-sm text-muted-foreground hover:text-foreground"
+              className="flex items-center py-3 text-sm text-muted-foreground hover:text-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
               Features
             </a>
             <a
               href="#walkers"
-              className="block py-2 text-sm text-muted-foreground hover:text-foreground"
+              className="flex items-center py-3 text-sm text-muted-foreground hover:text-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
               For walkers
@@ -92,29 +92,29 @@ export default function Index() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-secondary via-background to-background pt-20 pb-24 px-4">
+      <section className="relative overflow-hidden bg-gradient-to-br from-secondary via-background to-background pt-14 pb-16 sm:pt-20 sm:pb-24 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <Badge variant="secondary" className="mb-6 text-primary border-primary/20">
             Now available in London & New York
           </Badge>
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-foreground leading-tight mb-6">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground leading-tight mb-6">
             A tired dog is{" "}
             <span className="text-primary">a happy dog.</span>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-3">
             We make that happen.
           </p>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
+          <p className="text-sm sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
             Your dog well cared for, even when you don't have time. Verified walkers, live GPS, photo reports — complete peace of mind, every single walk.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="text-base px-8 h-12" asChild>
+            <Button size="lg" className="text-sm sm:text-base px-5 sm:px-8 h-12 w-full sm:w-auto" asChild>
               <Link to="/signup/owner">
                 Find a Walker
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-base px-8 h-12 border-primary text-primary hover:bg-secondary" asChild>
+            <Button size="lg" variant="outline" className="text-sm sm:text-base px-5 sm:px-8 h-12 w-full sm:w-auto border-primary text-primary hover:bg-secondary" asChild>
               <Link to="/signup/walker">Become a Walker</Link>
             </Button>
           </div>
@@ -128,7 +128,7 @@ export default function Index() {
 
       {/* Social proof strip */}
       <section className="bg-primary text-primary-foreground py-6 px-4">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-center">
           {[
             { value: "4.9 ★", label: "Average walker rating" },
             { value: "12,000+", label: "Walks completed" },
@@ -136,21 +136,21 @@ export default function Index() {
             { value: "< 5 min", label: "Average booking time" },
           ].map((stat) => (
             <div key={stat.label}>
-              <p className="text-2xl font-bold">{stat.value}</p>
-              <p className="text-sm opacity-80 mt-1">{stat.label}</p>
+              <p className="text-xl sm:text-2xl font-bold">{stat.value}</p>
+              <p className="text-xs sm:text-sm opacity-80 mt-1">{stat.label}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="py-24 px-4">
+      <section id="how-it-works" className="py-14 sm:py-24 px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
               Walking your dog has never been easier
             </h2>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            <p className="text-sm sm:text-lg text-muted-foreground max-w-xl mx-auto">
               Three simple steps between you and a happier, calmer dog.
             </p>
           </div>
@@ -193,13 +193,13 @@ export default function Index() {
       </section>
 
       {/* Features / Why PawGo */}
-      <section id="features" className="py-24 px-4 bg-muted/40">
+      <section id="features" className="py-14 sm:py-24 px-4 bg-muted/40">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
               Built for your peace of mind
             </h2>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            <p className="text-sm sm:text-lg text-muted-foreground max-w-xl mx-auto">
               Every feature exists to give you confidence when handing your dog to a walker.
             </p>
           </div>
@@ -265,10 +265,10 @@ export default function Index() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-24 px-4">
+      <section className="py-14 sm:py-24 px-4">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-foreground mb-4">
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
               Dogs and owners love PawGo
             </h2>
           </div>
@@ -316,15 +316,15 @@ export default function Index() {
       </section>
 
       {/* For Walkers */}
-      <section id="walkers" className="py-24 px-4 bg-primary text-primary-foreground">
+      <section id="walkers" className="py-14 sm:py-24 px-4 bg-primary text-primary-foreground">
         <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-10 sm:gap-12 items-center">
             <div>
-              <Badge className="bg-white/20 text-white border-0 mb-6">For dog walkers</Badge>
-              <h2 className="text-4xl font-bold mb-6">
+              <Badge className="bg-white/20 text-white border-0 mb-5 sm:mb-6">For dog walkers</Badge>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
                 Turn your love of dogs into a flexible income
               </h2>
-              <p className="text-primary-foreground/80 text-lg mb-8 leading-relaxed">
+              <p className="text-primary-foreground/80 text-sm sm:text-lg mb-6 sm:mb-8 leading-relaxed">
                 Set your own hours, choose your clients, and earn £15–25/hour in the UK or $20–35/hour in the USA.
                 Build a loyal client base that books you week after week.
               </p>
@@ -348,7 +348,7 @@ export default function Index() {
                 </Link>
               </Button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {[
                 { icon: Users, label: "Active walkers", value: "2,400+" },
                 { icon: Star, label: "Avg walker rating", value: "4.9 / 5" },
@@ -357,10 +357,10 @@ export default function Index() {
               ].map((stat) => (
                 <div
                   key={stat.label}
-                  className="bg-white/10 rounded-2xl p-5 text-center"
+                  className="bg-white/10 rounded-2xl p-3 sm:p-5 text-center"
                 >
-                  <stat.icon className="h-6 w-6 mx-auto mb-2 opacity-80" />
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <stat.icon className="h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-2 opacity-80" />
+                  <p className="text-lg sm:text-2xl font-bold">{stat.value}</p>
                   <p className="text-xs opacity-70 mt-1">{stat.label}</p>
                 </div>
               ))}
@@ -370,13 +370,13 @@ export default function Index() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-24 px-4 text-center">
+      <section className="py-14 sm:py-24 px-4 text-center">
         <div className="max-w-2xl mx-auto">
-          <span className="text-5xl mb-6 block">🐾</span>
-          <h2 className="text-4xl font-bold text-foreground mb-4">
+          <span className="text-4xl sm:text-5xl mb-5 sm:mb-6 block">🐾</span>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
             Ready to give your dog the walks they deserve?
           </h2>
-          <p className="text-lg text-muted-foreground mb-10">
+          <p className="text-sm sm:text-lg text-muted-foreground mb-8 sm:mb-10">
             Join thousands of dog owners who've found their perfect walker.
             Your dog's first walk is just minutes away.
           </p>
@@ -401,7 +401,7 @@ export default function Index() {
             <span className="text-xl">🐾</span>
             <span className="font-bold text-primary">PawGo</span>
           </div>
-          <nav className="flex flex-wrap gap-6 text-sm text-muted-foreground justify-center">
+          <nav className="flex flex-wrap gap-3 sm:gap-6 text-sm text-muted-foreground justify-center">
             <a href="#" className="hover:text-foreground transition-colors">About</a>
             <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
             <a href="#" className="hover:text-foreground transition-colors">Terms</a>

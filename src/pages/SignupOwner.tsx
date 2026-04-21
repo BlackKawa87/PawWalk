@@ -185,7 +185,7 @@ export default function SignupOwner() {
                 This helps us find the perfect walker for their personality and needs.
               </p>
               <form onSubmit={dogForm.handleSubmit(onDogSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="dogName">Dog's name</Label>
                     <Input id="dogName" placeholder="Buddy" {...dogForm.register("dogName")} />

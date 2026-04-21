@@ -201,22 +201,26 @@ function OwnerDashboard() {
 
       {/* Dog card */}
       <Card className="border-border bg-gradient-to-r from-secondary/60 to-background">
-        <CardContent className="flex items-center gap-4 py-4">
-          <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl shrink-0">
+        <CardContent className="flex items-start gap-3 py-4">
+          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl sm:text-3xl shrink-0">
             🐕
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-foreground text-lg">Buddy</p>
-            <p className="text-sm text-muted-foreground">Golden Retriever · 3 years · Large</p>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-bold text-foreground text-base sm:text-lg">Buddy</p>
+                <p className="text-sm text-muted-foreground">Golden Retriever · 3 years · Large</p>
+              </div>
+              <Button variant="outline" size="sm" className="shrink-0 h-8 text-xs">
+                Edit
+              </Button>
+            </div>
             <div className="flex flex-wrap gap-1.5 mt-2">
               {["Friendly", "Energetic", "Loves fetch"].map((t) => (
                 <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>
               ))}
             </div>
           </div>
-          <Button variant="outline" size="sm" className="shrink-0">
-            Edit
-          </Button>
         </CardContent>
       </Card>
 
@@ -393,7 +397,7 @@ function WalkerDashboard() {
           <Card key={stat.label} className="border-border">
             <CardContent className="pt-4 pb-3">
               <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
-              <p className="text-xl font-bold text-foreground">{stat.value}</p>
+              <p className="text-lg sm:text-xl font-bold text-foreground">{stat.value}</p>
               {stat.trend && (
                 <p className="text-xs text-green-600 mt-0.5">{stat.trend} vs last week</p>
               )}
@@ -449,8 +453,8 @@ function WalkerDashboard() {
                     </div>
                     {booking.status === "pending" && (
                       <div className="flex gap-2 mt-3">
-                        <Button size="sm" className="h-8 text-xs flex-1">Accept</Button>
-                        <Button size="sm" variant="outline" className="h-8 text-xs flex-1">Decline</Button>
+                        <Button size="sm" className="h-10 text-xs flex-1">Accept</Button>
+                        <Button size="sm" variant="outline" className="h-10 text-xs flex-1">Decline</Button>
                       </div>
                     )}
                   </div>
