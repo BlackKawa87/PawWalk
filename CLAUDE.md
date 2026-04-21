@@ -55,8 +55,9 @@ All routes are defined here. Do not define routes anywhere else.
 Mock localStorage-based auth. Storage key: `pawgo_user`.
 
 - **UserRole:** `"owner"` | `"walker"` | `"admin"`
-- **AuthUser:** `{ id, name, email, role, location? }`
+- **AuthUser:** `{ id, name, email, role, location?, signedUpAt? }` — `signedUpAt` is an ISO timestamp set on account creation; used for service fee grace period logic.
 - **Hook:** `useAuth()` → `{ user, login(), loginAs(), logout(), isLoading }`
+- `loginAs()` preserves existing `signedUpAt` if already set, otherwise stamps current time.
 - Currently mocked — structured for future Supabase integration.
 
 Demo accounts (Login page quick-access buttons):
@@ -107,8 +108,18 @@ Always use **shadcn/ui** from `src/components/ui/`. Icons from `lucide-react`. N
 - `fmt(amount, currency?)` → formatted currency string
 - `saveBooking()`, `getBookings()`, `getBookingsByOwner()`, `getBookingsByWalker()`
 - `getWalkerOnboarding()`, `setWalkerOnboarding()`, `isWalkerLive()`
+- `Booking` type includes `serviceFee: number` (0 or 1.50 depending on fee status at booking time)
 
 > **Important:** `platformFee` and `walkerEarnings` are internal only. Never display the split to owners or walkers (Uber model — users see net amounts only, never the commission breakdown).
+
+### `src/utils/serviceFee.ts`
+- `SERVICE_FEE = 1.50` — owner-side service fee (Airbnb-style)
+- `getFeeStatus(userId, signedUpAt?)` → `{ charged: boolean, reason: "active"|"new_user"|"inactive", safeDaysLeft? }`
+- **Fee logic:**
+  - `active`: last booking < 14 days → `charged: false`, `safeDaysLeft` = days until 14-day window expires
+  - `new_user`: account < 60 days AND no bookings yet → `charged: false`, `safeDaysLeft` = days until grace ends
+  - `inactive`: all other cases → `charged: true`
+- Active members who book at least once every 14 days never pay the fee, regardless of account age.
 
 ### `src/utils/chat.ts`
 - `getMessages(bookingId)`, `addMessage()`
@@ -138,8 +149,10 @@ Always use **shadcn/ui** from `src/components/ui/`. Icons from `lucide-react`. N
 4-step booking: Schedule → Confirm → Payment → Done.
 - Rebook pre-fill via URL params `?rebook=true&time=X&duration=Y`
 - Credits toggle in Confirm step (applies discount if balance > 0)
-- `handlePayment`: mock 1800ms delay, `saveBooking()`, `claimFirstBookingReward()`
-- Done step: "Message walker" CTA → `/app/chat/:bookingId`
+- **Service fee line** in Confirm step: "Free ✓" (green, with countdown) or "£1.50" — driven by `getFeeStatus()`
+- `amountDue = payment.total + serviceFeeAmount - creditDiscount`
+- `handlePayment`: mock 1800ms delay, `saveBooking()` (includes `serviceFee`), `claimFirstBookingReward()`
+- Done step: receipt shows actual `amountDue`, "Message walker" CTA → `/app/chat/:bookingId`
 - Replace `setTimeout` with real Stripe PaymentIntent when integrating payments
 
 ### `src/pages/app/Chat.tsx`
@@ -167,6 +180,7 @@ Always use **shadcn/ui** from `src/components/ui/`. Icons from `lucide-react`. N
 - **Pricing model (Uber model):** Commission split is internal only. Owners see total price. Walkers see net earnings. Neither sees the percentage or the other side's amount.
 - **Contact control:** Chat only unlocks after a confirmed booking. Contact info detection warns users to keep communication in-platform.
 - **First-booking reward:** £5 credit awarded once per user on first completed payment. Applied automatically on next booking if toggle is on.
+- **Service fee (£1.50):** Owner-side fee waived for active members (booked within last 14 days) and new users (< 60 days, no prior bookings). Prominently shown in Dashboard (green = safe, amber = fee applies) and in BookingFlow Confirm step. Never show on walker-facing surfaces.
 - **Walker goes live:** Must complete 3 onboarding steps (photo, availability, service area) before appearing in search.
 
 ---
