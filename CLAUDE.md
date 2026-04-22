@@ -175,9 +175,10 @@ Always use **shadcn/ui** from `src/components/ui/`. Icons from `lucide-react`. N
 
 ### `src/pages/admin/Admin.tsx`
 - Route: `/admin` — role-gated (`user.role === "admin"`), inline demo login if not admin
-- 6 sections via tab navigation: Dashboard, Bookings, Users, Financials, Quality, Logs
+- 7 sections via tab navigation: Dashboard, Bookings, Users, Financials, Quality, Logs, **Test Lab**
 - Suspend/reinstate users: live state via `toggleBlockUser()` + writes to activity log
 - Resolve alerts: live state via `resolveAlert()` + writes to activity log
+- **Test Lab**: 5 scenario presets (Fresh Owner, Active Owner, Inactive Owner, Owner + Credits, Walker Live) — each `loginAs()` a fixed test user, injects relevant localStorage data, and navigates to `/app/dashboard`. Also includes: flow checklist, current session state card, clear-all data button, quick credit injection (+£5/10/20).
 
 ---
 
