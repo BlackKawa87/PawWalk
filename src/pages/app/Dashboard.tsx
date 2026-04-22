@@ -12,6 +12,7 @@ import {
 } from "@/utils/booking";
 import { getCredits, getFavorites } from "@/utils/retention";
 import { getFeeStatus } from "@/utils/serviceFee";
+import { downloadInvoice } from "@/utils/invoice";
 import { getWalkerById } from "@/data/walkers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +50,7 @@ import {
   MessageCircle,
   LayoutDashboard,
   AlertCircle,
+  Download,
 } from "lucide-react";
 
 // ─── Shared Nav ──────────────────────────────────────────────────────────────
@@ -338,6 +340,15 @@ function OwnerDashboard() {
                     <div className="flex gap-2 shrink-0">
                       <Button
                         size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                        title="Download invoice"
+                        onClick={() => downloadInvoice(booking)}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="outline"
                         className="h-8 text-xs px-3"
                         onClick={() => navigate(`/app/chat/${booking.id}`)}
@@ -471,6 +482,7 @@ function OwnerDashboard() {
 // ─── Shared booking card ──────────────────────────────────────────────────────
 
 function BookingCard({ booking, role }: { booking: Booking; role: "owner" | "walker" }) {
+  const amountPaid = booking.total + (booking.serviceFee ?? 0) - (booking.creditsUsed ?? 0);
   return (
     <Card className="border-border">
       <CardContent className="py-4">
@@ -507,8 +519,21 @@ function BookingCard({ booking, role }: { booking: Booking; role: "owner" | "wal
             <Clock className="h-3.5 w-3.5" />
             {booking.duration} min
           </span>
-          <span className="font-medium text-foreground ml-auto">{fmt(booking.total)}</span>
+          <span className="font-medium text-foreground ml-auto">{fmt(amountPaid)}</span>
         </div>
+        {role === "owner" && (
+          <div className="mt-3 flex justify-end">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+              onClick={() => downloadInvoice(booking)}
+            >
+              <Download className="h-3.5 w-3.5" />
+              Download invoice
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

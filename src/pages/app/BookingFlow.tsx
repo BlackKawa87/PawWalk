@@ -5,6 +5,7 @@ import { getWalkerById } from "@/data/walkers";
 import { calculatePayment, fmt, saveBooking, type Booking } from "@/utils/booking";
 import { getCredits, spendCredits, claimFirstBookingReward } from "@/utils/retention";
 import { getFeeStatus, SERVICE_FEE } from "@/utils/serviceFee";
+import { downloadInvoice } from "@/utils/invoice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ import {
   Info,
   MessageCircle,
   Gift,
+  Download,
 } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -106,6 +108,7 @@ export default function BookingFlow() {
   const [cvv, setCvv] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookingId, setBookingId] = useState("");
+  const [completedBooking, setCompletedBooking] = useState<import("@/utils/booking").Booking | null>(null);
   const [useCredits, setUseCredits] = useState(false);
   const [isFirstBooking, setIsFirstBooking] = useState(false);
 
@@ -160,6 +163,7 @@ export default function BookingFlow() {
       platformFee: payment.platformFee,
       walkerEarnings: payment.walkerEarnings,
       serviceFee: serviceFeeAmount,
+      creditsUsed: creditDiscount,
       currency: "GBP",
       status: "confirmed",
       paymentStatus: "paid",
@@ -167,6 +171,7 @@ export default function BookingFlow() {
       notes: notes || undefined,
     };
     saveBooking(booking);
+    setCompletedBooking(booking);
 
     const firstBooking = user ? claimFirstBookingReward(user.id) : false;
     setIsFirstBooking(firstBooking);
@@ -602,6 +607,16 @@ export default function BookingFlow() {
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Message {walker.name}
                 </Button>
+                {completedBooking && (
+                  <Button
+                    variant="outline"
+                    className="w-full h-11"
+                    onClick={() => downloadInvoice(completedBooking)}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download invoice
+                  </Button>
+                )}
                 <Button variant="outline" className="w-full h-11" onClick={() => navigate("/app/dashboard")}>
                   Back to dashboard
                 </Button>
