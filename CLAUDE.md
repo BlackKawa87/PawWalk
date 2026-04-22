@@ -108,7 +108,7 @@ Always use **shadcn/ui** from `src/components/ui/`. Icons from `lucide-react`. N
 - `fmt(amount, currency?)` → formatted currency string
 - `saveBooking()`, `getBookings()`, `getBookingsByOwner()`, `getBookingsByWalker()`
 - `getWalkerOnboarding()`, `setWalkerOnboarding()`, `isWalkerLive()`
-- `Booking` type includes `serviceFee: number` (0 or 1.50 depending on fee status at booking time)
+- `Booking` type includes `serviceFee: number` (0 or 1.50) and `creditsUsed: number` — both needed for accurate invoice totals
 
 > **Important:** `platformFee` and `walkerEarnings` are internal only. Never display the split to owners or walkers (Uber model — users see net amounts only, never the commission breakdown).
 
@@ -131,6 +131,11 @@ Always use **shadcn/ui** from `src/components/ui/`. Icons from `lucide-react`. N
 - Credits: `getCredits()`, `addCredits()`, `spendCredits()`
 - First-booking reward: `claimFirstBookingReward(userId)` — awards £5 credit once per user
 
+### `src/utils/invoice.ts`
+- `downloadInvoice(booking)` — generates a print-ready HTML invoice in a new tab and triggers the browser print dialog (Save as PDF)
+- Invoice includes: PawGo branding, booking ref, owner/walker details, walk date/time/duration, price breakdown (walk + service fee + credits), total paid, independent contractor notice
+- No external PDF library required — uses `window.open()` + styled HTML
+
 ### `src/utils/admin.ts`
 - `getAdminBookings()` — real bookings + 12 seed bookings combined
 - `getMockOwners()`, `getMockAdminWalkers()` — 8 owners + 6 walkers
@@ -151,8 +156,9 @@ Always use **shadcn/ui** from `src/components/ui/`. Icons from `lucide-react`. N
 - Credits toggle in Confirm step (applies discount if balance > 0)
 - **Service fee line** in Confirm step: "Free ✓" (green, with countdown) or "£1.50" — driven by `getFeeStatus()`
 - `amountDue = payment.total + serviceFeeAmount - creditDiscount`
-- `handlePayment`: mock 1800ms delay, `saveBooking()` (includes `serviceFee`), `claimFirstBookingReward()`
-- Done step: receipt shows actual `amountDue`, "Message walker" CTA → `/app/chat/:bookingId`
+- `handlePayment`: mock 1800ms delay, `saveBooking()` (includes `serviceFee`, `creditsUsed`), `claimFirstBookingReward()`
+- Done step: receipt shows actual `amountDue`, "Message walker" + "Download invoice" CTAs
+- Invoice download via `downloadInvoice()` — only shown to owners, never walkers
 - Replace `setTimeout` with real Stripe PaymentIntent when integrating payments
 
 ### `src/pages/app/Chat.tsx`
