@@ -1,7 +1,10 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { fmt } from "@/utils/booking";
+import { fmt, getBookings } from "@/utils/booking";
+import type { Booking } from "@/utils/booking";
+import { addCredits } from "@/utils/retention";
+import { setWalkerOnboarding } from "@/utils/booking";
 import { MOCK_WALKERS } from "@/data/walkers";
 import {
   getAdminBookings,
@@ -56,11 +59,16 @@ import {
   Banknote,
   BarChart3,
   MapPin,
+  FlaskConical,
+  Trash2,
+  ArrowRight,
+  Gift,
+  UserCheck,
 } from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type Section = "dashboard" | "bookings" | "users" | "financials" | "quality" | "logs";
+type Section = "dashboard" | "bookings" | "users" | "financials" | "quality" | "logs" | "testlab";
 
 const NAV: { key: Section; label: string; icon: React.ElementType }[] = [
   { key: "dashboard",  label: "Dashboard",  icon: LayoutDashboard },
@@ -69,6 +77,7 @@ const NAV: { key: Section; label: string; icon: React.ElementType }[] = [
   { key: "financials", label: "Financials", icon: TrendingUp      },
   { key: "quality",    label: "Quality",    icon: Star            },
   { key: "logs",       label: "Logs",       icon: FileText        },
+  { key: "testlab",    label: "Test Lab",   icon: FlaskConical    },
 ];
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -904,6 +913,330 @@ function LogsSection() {
   );
 }
 
+// ─── Test Lab ──────────────────────────────────────────────────────────────────
+
+const PAWGO_KEYS = [
+  "pawgo_user", "pawgo_bookings", "pawgo_messages",
+  "pawgo_favs", "pawgo_credits", "pawgo_walker_ob",
+  "pawgo_admin_logs", "pawgo_blocked_users", "pawgo_resolved_alerts",
+];
+
+function daysAgo(n: number) {
+  return new Date(Date.now() - n * 86_400_000).toISOString();
+}
+
+function injectOwnerBooking(ownerId: string, ownerName: string, daysSince: number, status: "confirmed" | "completed") {
+  const createdAt = daysAgo(daysSince);
+  const walkDate = new Date(Date.now() - (daysSince - 1) * 86_400_000).toISOString().split("T")[0];
+  const booking: Booking = {
+    id: `testbk-${ownerId}-${daysSince}`,
+    ownerId,
+    ownerName,
+    ownerDog: "Buddy",
+    walkerId: "w1",
+    walkerName: "Emily Carter",
+    date: walkDate,
+    time: "10:00 AM",
+    duration: 30,
+    pricePerWalk: 15,
+    total: 15,
+    platformFee: 3,
+    walkerEarnings: 12,
+    serviceFee: 0,
+    creditsUsed: 0,
+    currency: "GBP",
+    status,
+    paymentStatus: "paid",
+    createdAt,
+  };
+  const existing = getBookings().filter((b) => !b.id.startsWith(`testbk-${ownerId}`));
+  localStorage.setItem("pawgo_bookings", JSON.stringify([...existing, booking]));
+}
+
+const SCENARIOS = [
+  {
+    id: "fresh-owner",
+    emoji: "🆕",
+    title: "Fresh owner",
+    subtitle: "New account, 0 bookings",
+    what: "Fee: Welcome free period banner · FTUE empty state · Book first walk CTA",
+    color: "border-blue-200 bg-blue-50/50",
+    badgeCls: "bg-blue-100 text-blue-700",
+    badgeLabel: "New user",
+    setup: (loginAs: (u: Parameters<ReturnType<typeof useAuth>["loginAs"]>[0]) => void) => {
+      const user = {
+        id: "test-owner-fresh",
+        name: "Sarah Demo",
+        email: "sarah.new@test.com",
+        role: "owner" as const,
+        location: "London, UK",
+        signedUpAt: new Date().toISOString(),
+      };
+      loginAs(user);
+    },
+  },
+  {
+    id: "active-owner",
+    emoji: "✅",
+    title: "Active owner",
+    subtitle: "90-day account · last booking 5 days ago",
+    what: "Fee: Waived (active member) · green banner · credits toggle in booking",
+    color: "border-green-200 bg-green-50/50",
+    badgeCls: "bg-green-100 text-green-700",
+    badgeLabel: "No fee",
+    setup: (loginAs: (u: Parameters<ReturnType<typeof useAuth>["loginAs"]>[0]) => void) => {
+      const user = {
+        id: "test-owner-active",
+        name: "James Demo",
+        email: "james.active@test.com",
+        role: "owner" as const,
+        location: "London, UK",
+        signedUpAt: daysAgo(90),
+      };
+      injectOwnerBooking(user.id, user.name, 5, "confirmed");
+      loginAs(user);
+    },
+  },
+  {
+    id: "inactive-owner",
+    emoji: "⚠️",
+    title: "Inactive owner",
+    subtitle: "90-day account · last booking 20 days ago",
+    what: "Fee: £1.50 charged · amber dashboard banner · fee line in Confirm step",
+    color: "border-amber-200 bg-amber-50/50",
+    badgeCls: "bg-amber-100 text-amber-700",
+    badgeLabel: "£1.50 fee",
+    setup: (loginAs: (u: Parameters<ReturnType<typeof useAuth>["loginAs"]>[0]) => void) => {
+      const user = {
+        id: "test-owner-inactive",
+        name: "Alex Demo",
+        email: "alex.inactive@test.com",
+        role: "owner" as const,
+        location: "London, UK",
+        signedUpAt: daysAgo(90),
+      };
+      injectOwnerBooking(user.id, user.name, 20, "completed");
+      loginAs(user);
+    },
+  },
+  {
+    id: "owner-credits",
+    emoji: "🎁",
+    title: "Owner with credits",
+    subtitle: "Active owner + £5 PawGo credits",
+    what: "Credits banner on dashboard · credits toggle in Confirm step · apply & see discount",
+    color: "border-green-200 bg-green-50/50",
+    badgeCls: "bg-green-100 text-green-700",
+    badgeLabel: "£5 credit",
+    setup: (loginAs: (u: Parameters<ReturnType<typeof useAuth>["loginAs"]>[0]) => void) => {
+      const user = {
+        id: "test-owner-credits",
+        name: "Priya Demo",
+        email: "priya.credits@test.com",
+        role: "owner" as const,
+        location: "London, UK",
+        signedUpAt: daysAgo(5),
+      };
+      localStorage.setItem("pawgo_credits", "5");
+      loginAs(user);
+    },
+  },
+  {
+    id: "walker-live",
+    emoji: "🚶",
+    title: "Walker (live)",
+    subtitle: "Verified walker, onboarding complete",
+    what: "Walker dashboard · earnings · onboarding checklist complete · Live badge",
+    color: "border-primary/20 bg-secondary/30",
+    badgeCls: "bg-primary/10 text-primary",
+    badgeLabel: "Walker",
+    setup: (loginAs: (u: Parameters<ReturnType<typeof useAuth>["loginAs"]>[0]) => void) => {
+      const user = {
+        id: "test-walker-live",
+        name: "Tom Demo",
+        email: "tom.walker@test.com",
+        role: "walker" as const,
+        location: "London, UK",
+        signedUpAt: daysAgo(30),
+      };
+      setWalkerOnboarding({ hasPhoto: true, hasAvailability: true, hasServiceArea: true });
+      loginAs(user);
+    },
+  },
+];
+
+function TestLabSection() {
+  const { loginAs } = useAuth();
+  const navigate = useNavigate();
+  const [cleared, setCleared] = useState(false);
+  const [launched, setLaunched] = useState<string | null>(null);
+
+  const handleScenario = (scenario: typeof SCENARIOS[number]) => {
+    scenario.setup(loginAs);
+    setLaunched(scenario.id);
+    setTimeout(() => navigate("/app/dashboard"), 150);
+  };
+
+  const handleClearAll = () => {
+    PAWGO_KEYS.forEach((k) => localStorage.removeItem(k));
+    // also clear rewarded keys
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith("pawgo_rewarded_"))
+      .forEach((k) => localStorage.removeItem(k));
+    setCleared(true);
+    setTimeout(() => setCleared(false), 2500);
+  };
+
+  const allBookings = getBookings();
+  const credits = Number(localStorage.getItem("pawgo_credits") ?? 0);
+  const currentUser = (() => {
+    try { return JSON.parse(localStorage.getItem("pawgo_user") ?? "null"); } catch { return null; }
+  })();
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <FlaskConical className="h-5 w-5 text-primary" />
+            Test Lab
+          </h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            One-click scenarios to test the full booking flow end-to-end.
+            Each preset sets up a user + data state and opens the app.
+          </p>
+        </div>
+      </div>
+
+      {/* Scenario presets */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Scenario presets</h3>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {SCENARIOS.map((s) => (
+            <Card
+              key={s.id}
+              className={`border cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 ${s.color} ${launched === s.id ? "ring-2 ring-primary" : ""}`}
+              onClick={() => handleScenario(s)}
+            >
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{s.emoji}</span>
+                    <div>
+                      <p className="font-semibold text-sm text-foreground leading-tight">{s.title}</p>
+                      <p className="text-xs text-muted-foreground">{s.subtitle}</p>
+                    </div>
+                  </div>
+                  <Badge className={`${s.badgeCls} border-0 text-xs shrink-0`}>{s.badgeLabel}</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-3">{s.what}</p>
+                <Button size="sm" className="w-full h-8 text-xs gap-1.5">
+                  Launch scenario
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Flow guide */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Flow checklist</h3>
+        <Card className="border-border">
+          <CardContent className="pt-4 pb-4">
+            <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
+              {[
+                ["Owner booking flow", "Find walker → Book → Confirm (check fee line) → Pay → Download invoice"],
+                ["Service fee — waived", "Use Active Owner scenario → Confirm step shows 'Free ✓'"],
+                ["Service fee — charged", "Use Inactive Owner scenario → Confirm step shows '£1.50'"],
+                ["Credits flow", "Use Owner + Credits → Confirm step shows toggle → apply discount"],
+                ["First booking reward", "Use Fresh Owner → complete a booking → see 🎉 banner + £5 credit"],
+                ["Invoice download", "Complete any booking → click 'Download invoice' in Done step"],
+                ["Walker dashboard", "Use Walker (live) scenario → check stats, onboarding complete"],
+                ["Chat flow", "Complete a booking → click 'Message walker' → send a message"],
+              ].map(([title, steps]) => (
+                <div key={title} className="flex gap-2.5 py-1.5">
+                  <UserCheck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{title}</p>
+                    <p className="text-xs text-muted-foreground">{steps}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Current session state */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Current session state</h3>
+        <Card className="border-border">
+          <CardContent className="pt-4 pb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: "Logged in as", value: currentUser ? `${currentUser.name} (${currentUser.role})` : "—" },
+                { label: "Account age", value: currentUser?.signedUpAt ? `${Math.floor((Date.now() - new Date(currentUser.signedUpAt).getTime()) / 86400000)} days` : "—" },
+                { label: "Bookings stored", value: String(allBookings.length) },
+                { label: "Credits balance", value: credits > 0 ? fmt(credits) : "£0.00" },
+              ].map((item) => (
+                <div key={item.label}>
+                  <p className="text-xs text-muted-foreground mb-0.5">{item.label}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Data controls */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Data controls</h3>
+        <Card className="border-red-200 bg-red-50/30">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Clear all platform data</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Wipes all <code className="text-xs bg-muted px-1 rounded">pawgo_*</code> localStorage keys —
+                  bookings, messages, credits, favs, logs, user session.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-9 gap-2 shrink-0"
+                onClick={handleClearAll}
+              >
+                <Trash2 className="h-4 w-4" />
+                {cleared ? "Cleared ✓" : "Clear all data"}
+              </Button>
+            </div>
+            <Separator className="my-3" />
+            <div className="flex flex-wrap gap-2">
+              <p className="text-xs text-muted-foreground w-full">Quick credit injection (for current user):</p>
+              {[5, 10, 20].map((amount) => (
+                <Button
+                  key={amount}
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={() => { addCredits(amount); setCleared(false); }}
+                >
+                  <Gift className="h-3.5 w-3.5" />
+                  +£{amount} credits
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main export ───────────────────────────────────────────────────────────────
 
 export default function Admin() {
@@ -1017,6 +1350,7 @@ export default function Admin() {
         {section === "financials" && <FinancialsSection />}
         {section === "quality"    && <QualitySection />}
         {section === "logs"       && <LogsSection />}
+        {section === "testlab"    && <TestLabSection />}
       </main>
     </div>
   );
